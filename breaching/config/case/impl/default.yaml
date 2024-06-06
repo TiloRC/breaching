@@ -17,7 +17,7 @@ threads: 0 # maximal number of cpu dataloader workers used per GPU
 persistent_workers: False
 
 mixed_precision: False
-grad_scaling: True # this is a no-op if mixed-precision is off
+grad_scaling: False # this is a no-op if mixed-precision is off
 JIT: # script currently break autocast mixed precision and trace breaks training
 
 validate_every_nth_step: 10

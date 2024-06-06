@@ -36,6 +36,8 @@ def system_startup(process_idx, local_group_size, cfg):
 
     if cfg.case.impl.enable_gpu_acc and torch.cuda.is_available():
         device = torch.device(f"cuda:{process_idx}")
+    elif cfg.case.impl.enable_gpu_acc and torch.backends.mps.is_available():
+        device = torch.device("mps")
     else:
         device = torch.device("cpu")
     setup = dict(device=device, dtype=dtype)
