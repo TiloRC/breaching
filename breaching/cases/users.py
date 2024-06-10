@@ -4,6 +4,7 @@ import torch
 import copy
 from itertools import chain
 from kfac.preconditioner import KFACPreconditioner
+from kfac.enums import ComputeMethod
 
 from .data import construct_dataloader
 import logging
@@ -359,7 +360,8 @@ class UserMultiStep(UserSingleStep):
         )
 
         optimizer = torch.optim.SGD(self.model.parameters(), lr=self.local_learning_rate)
-        preconditioner = KFACPreconditioner(self.model, lr=self.local_learning_rate)
+        preconditioner = KFACPreconditioner(self.model, lr=self.local_learning_rate, damping=0.001,
+                                            compute_method = ComputeMethod.INVERSE)
         seen_data_idx = 0
         label_list = []
         for step in range(self.num_local_updates):
