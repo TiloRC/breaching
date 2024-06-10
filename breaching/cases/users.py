@@ -336,6 +336,7 @@ class UserMultiStep(UserSingleStep):
 
     def compute_local_updates(self, server_payload):
         """Compute local updates to the given model based on server payload."""
+        print("Using KFAC")
         self.counted_queries += 1
         user_data = self._load_data()
 
