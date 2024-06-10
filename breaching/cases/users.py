@@ -3,6 +3,7 @@
 import torch
 import copy
 from itertools import chain
+from kfac.preconditioner import KFACPreconditioner
 
 from .data import construct_dataloader
 import logging
@@ -356,6 +357,7 @@ class UserMultiStep(UserSingleStep):
         )
 
         optimizer = torch.optim.SGD(self.model.parameters(), lr=self.local_learning_rate)
+        preconditioner = KFACPreconditioner(self.model, lr=self.local_learning_rate)
         seen_data_idx = 0
         label_list = []
         for step in range(self.num_local_updates):
@@ -381,6 +383,7 @@ class UserMultiStep(UserSingleStep):
             if self.clip_value > 0:
                 self._clip_list_of_grad_(grads_ref)
             self._apply_differential_noise(grads_ref)
+            preconditioner.step()
             optimizer.step()
 
         # Share differential to server version:
