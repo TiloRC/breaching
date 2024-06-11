@@ -25,8 +25,8 @@ class GradientLoss(torch.nn.Module):
 
     def forward(self, model, gradient_data, candidate, labels):
         gradient, task_loss = self._grad_fn(model, candidate, labels)
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        objective = self.gradient_based_loss(gradient, gradient_data)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            objective = self.gradient_based_loss(gradient, gradient_data)
         if self.task_regularization != 0:
             objective += self.task_regularization * task_loss
         return objective, task_loss.detach()
@@ -40,8 +40,8 @@ class GradientLoss(torch.nn.Module):
     def _grad_fn_single_step(self, model, candidate, labels):
         """Compute a single gradient."""
         model.zero_grad()
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        task_loss = self.loss_fn(model(candidate), labels)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            task_loss = self.loss_fn(model(candidate), labels)
         gradient = torch.autograd.grad(task_loss, model.parameters(), create_graph=True)
         return gradient, task_loss
 
@@ -57,8 +57,8 @@ class GradientLoss(torch.nn.Module):
             seen_data_idx += self.local_hyperparams["data_per_step"]
             seen_data_idx = seen_data_idx % candidate.shape[0]
             labels = self.local_hyperparams["labels"][i]
-            #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-            task_loss = self.loss_fn(func_model(params, buffers, data), labels)
+            with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+                task_loss = self.loss_fn(func_model(params, buffers, data), labels)
 
             step_gradient = torch.autograd.grad(task_loss, params, create_graph=True)
 
@@ -338,8 +338,8 @@ class PearlmutterEuclidean(torch.nn.Module):
 
     def _forward_differences(self, model, gradient_data, candidate, labels):
         """Run through model twice to approximate 2nd-order derivative on residual."""
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        task_loss = self.loss_fn(model(candidate), labels)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            task_loss = self.loss_fn(model(candidate), labels)
         # Compute both model gradients and candidate gradients
         *gradients, dLdx = torch.autograd.grad(task_loss, (*model.parameters(), candidate), create_graph=False)
         if self.level_gradients:
@@ -353,8 +353,8 @@ class PearlmutterEuclidean(torch.nn.Module):
         eps_n = self.eps / torch.stack([g.pow(2).sum() for g in gradients]).sum().sqrt()
         # Patch model and compute loss at offset vector:
         torch._foreach_add_(list(model.parameters()), first_order_grad, alpha=eps_n)
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        offset_task_loss = self.loss_fn(model(candidate), labels)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            offset_task_loss = self.loss_fn(model(candidate), labels)
         (dLv_dx,) = torch.autograd.grad(offset_task_loss, (candidate,), create_graph=False)
 
         # Compute finite difference approximation
@@ -366,8 +366,8 @@ class PearlmutterEuclidean(torch.nn.Module):
 
     def _backward_differences(self, model, gradient_data, candidate, labels):
         """Run through model twice to approximate 2nd-order derivative on residual."""
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        task_loss = self.loss_fn(model(candidate), labels)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            task_loss = self.loss_fn(model(candidate), labels)
         # Compute both model gradients and candidate gradients
         *gradients, dLdx = torch.autograd.grad(task_loss, (*model.parameters(), candidate), create_graph=False)
         if self.level_gradients:
@@ -381,8 +381,8 @@ class PearlmutterEuclidean(torch.nn.Module):
         eps_n = self.eps / torch.stack([g.pow(2).sum() for g in gradients]).sum().sqrt()
         # Patch model and compute loss at offset vector:
         torch._foreach_sub_(list(model.parameters()), first_order_grad, alpha=eps_n)
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        offset_task_loss = self.loss_fn(model(candidate), labels)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            offset_task_loss = self.loss_fn(model(candidate), labels)
         (dLv_dx,) = torch.autograd.grad(offset_task_loss, (candidate,), create_graph=False)
 
         # Compute finite difference approximation
@@ -394,8 +394,8 @@ class PearlmutterEuclidean(torch.nn.Module):
 
     def _central_differences(self, model, gradient_data, candidate, labels):
         """Run through model twice to approximate 2nd-order derivative on residual."""
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        task_loss = self.loss_fn(model(candidate), labels)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            task_loss = self.loss_fn(model(candidate), labels)
         # Compute both model gradients and candidate gradients
         *gradients, dLdx = torch.autograd.grad(task_loss, (*model.parameters(), candidate), create_graph=False)
 
@@ -406,13 +406,13 @@ class PearlmutterEuclidean(torch.nn.Module):
 
         # Patch model and compute loss at offset vectors:
         torch._foreach_add_(list(model.parameters()), first_order_grad, alpha=0.5 * eps_n)
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        offset_plus = self.loss_fn(model(candidate), labels)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            offset_plus = self.loss_fn(model(candidate), labels)
         (dLvp_dx,) = torch.autograd.grad(offset_plus, (candidate,), create_graph=False)
 
         torch._foreach_sub_(list(model.parameters()), first_order_grad, alpha=eps_n)
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        offset_minus = self.loss_fn(model(candidate), labels)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            offset_minus = self.loss_fn(model(candidate), labels)
         (dLvm_dx,) = torch.autograd.grad(offset_minus, (candidate,), create_graph=False)
 
         # Compute finite difference approximation
@@ -424,8 +424,8 @@ class PearlmutterEuclidean(torch.nn.Module):
 
     def _upwind_differences(self, model, gradient_data, candidate, labels):
         """Run through model twice to approximate 2nd-order derivative on residual."""
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        task_loss = self.loss_fn(model(candidate), labels)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            task_loss = self.loss_fn(model(candidate), labels)
         # Compute both model gradients and candidate gradients
         *gradients, dLdx = torch.autograd.grad(task_loss, (*model.parameters(), candidate), create_graph=False)
 
@@ -436,13 +436,13 @@ class PearlmutterEuclidean(torch.nn.Module):
 
         # Patch model and compute loss at offset vectors:
         torch._foreach_add_(list(model.parameters()), first_order_grad, alpha=0.5 * eps_n)
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        offset_plus = self.loss_fn(model(candidate), labels)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            offset_plus = self.loss_fn(model(candidate), labels)
         (dLvp_dx,) = torch.autograd.grad(offset_plus, (candidate,), create_graph=False)
 
         torch._foreach_sub_(list(model.parameters()), first_order_grad, alpha=eps_n)
-        #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-        offset_minus = self.loss_fn(model(candidate), labels)
+        with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+            offset_minus = self.loss_fn(model(candidate), labels)
         (dLvm_dx,) = torch.autograd.grad(offset_minus, (candidate,), create_graph=False)
 
         # Compute both finite differences
@@ -460,8 +460,8 @@ class PearlmutterEuclidean(torch.nn.Module):
         residuals = torch._foreach_sub(gradients, gradient_data)  # Save one copy of the gradient list here ?
         # Gradients have already been populated. Make sure not to kill them later on.
         with torch.no_grad():
-            #with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
-            objective_value = 0.5 * self.scale * torch.stack([r.detach().pow(2).sum() for r in residuals]).sum()
+            with torch.autocast(candidate.device.type, enabled=self.cfg_impl.mixed_precision):
+                objective_value = 0.5 * self.scale * torch.stack([r.detach().pow(2).sum() for r in residuals]).sum()
         return objective_value, residuals
 
 

@@ -368,8 +368,8 @@ class _BaseAttacker:
                     for class_idx in range(num_classes):
                         fake_data = torch.randn([num_data_points, *self.data_shape], **self.setup)
                         fake_labels = torch.as_tensor([class_idx] * num_data_points, **self.setup)
-                        #with torch.autocast(self.setup["device"].type, enabled=self.cfg.impl.mixed_precision):
-                        loss = self.loss_fn(model(fake_data), fake_labels)
+                        with torch.autocast(self.setup["device"].type, enabled=self.cfg.impl.mixed_precision):
+                            loss = self.loss_fn(model(fake_data), fake_labels)
                         (W_cls,) = torch.autograd.grad(loss, weight_params)
                         g_i = W_cls.sum(dim=1)
                         m_impact += g_i.sum() * (1 + 1 / num_classes) / num_data_points / num_classes / num_queries
@@ -380,8 +380,8 @@ class _BaseAttacker:
                         fake_data = torch.randn([T, *self.data_shape], **self.setup)
                         fake_labels = torch.arange(num_classes, **self.setup)
                         fake_labels = fake_labels[fake_labels != class_idx]
-                        #with torch.autocast(self.setup["device"].type, enabled=self.cfg.impl.mixed_precision):
-                        loss = self.loss_fn(model(fake_data), fake_labels)
+                        with torch.autocast(self.setup["device"].type, enabled=self.cfg.impl.mixed_precision):
+                            loss = self.loss_fn(model(fake_data), fake_labels)
                         (W_cls,) = torch.autograd.grad(loss, (weight_params[0][class_idx],))
                         s_offset[class_idx] += W_cls.sum() / T / num_queries
 
