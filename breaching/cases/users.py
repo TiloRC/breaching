@@ -351,8 +351,7 @@ class UserMultiStep(UserSingleStep):
             if buffers is not None:
                 for buffer, server_state in zip(self.model.buffers(), buffers):
                     buffer.copy_(server_state.to(**self.setup))
-                #self.model.eval()
-                self.model.train()
+                self.model.eval()
             else:
                 self.model.train()
         log.info(
