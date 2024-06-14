@@ -3,8 +3,6 @@
 import torch
 import copy
 from itertools import chain
-from kfac.preconditioner import KFACPreconditioner
-from kfac.enums import ComputeMethod
 
 from .data import construct_dataloader
 import logging
@@ -318,6 +316,7 @@ class UserMultiStep(UserSingleStep):
         self.num_data_per_local_update_step = cfg_user.num_data_per_local_update_step
         self.local_learning_rate = cfg_user.local_learning_rate
         self.provide_local_hyperparams = cfg_user.provide_local_hyperparams
+        self.optimizer = cfg_user.optimizer
 
     def __repr__(self):
         n = "\n"
@@ -337,7 +336,6 @@ class UserMultiStep(UserSingleStep):
 
     def compute_local_updates(self, server_payload):
         """Compute local updates to the given model based on server payload."""
-        print("Using KFAC")
         self.counted_queries += 1
         user_data = self._load_data()
 
@@ -358,9 +356,37 @@ class UserMultiStep(UserSingleStep):
             f"Computing user update on user {self.user_idx} in model mode: {'training' if self.model.training else 'eval'}."
         )
 
-        optimizer = torch.optim.SGD(self.model.parameters(), lr=self.local_learning_rate)
-        preconditioner = KFACPreconditioner(self.model, lr=self.local_learning_rate, damping=0.001,
-                                            compute_method = ComputeMethod.INVERSE)
+        if self.optimizer == "SGD":
+            print("Using SGD")
+            optimizer = torch.optim.SGD(self.model.parameters(), lr=self.local_learning_rate)
+        elif self.optimizer == "KFAC":
+            from kfac.preconditioner import KFACPreconditioner
+            from kfac.enums import ComputeMethod
+            print("Using KFAC")
+            optimizer = torch.optim.SGD(self.model.parameters(), lr=self.local_learning_rate)
+            # Using compute_method = ComputeMethod.INVERSE because
+            # eigen decomposing the A factor failed and this fixed it.
+            preconditioner = KFACPreconditioner(self.model, lr=self.local_learning_rate, damping=0.001,
+                                                compute_method = ComputeMethod.INVERSE)
+        elif self.optimizer == "Adam":
+            print("Using Adam")
+            optimizer = torch.optim.Adam(self.model.parameters(), lr=self.local_learning_rate)
+        elif self.optimizer == "LBFGS":
+            raise NotImplementedError("Need to address this error—— TypeError: LBFGS.step() missing 1 required positional argument: 'closure'")
+            print("Using L-BFGS")
+            optimizer = torch.optim.LBFGS(self.model.parameters(), lr=self.local_learning_rate)
+        elif self.optimizer == "Adagrad":
+            print("Using Adagrad")
+            optimizer = torch.optim.Adagrad(self.model.parameters(), lr=self.local_learning_rate)
+        elif self.optimizer == "RMSprop":
+            print("Using RMSprop")
+            optimizer = torch.optim.RMSprop(self.model.parameters(), lr=self.local_learning_rate)
+        elif self.optimizer == "SGD_with_momentum":
+            print("Using SGD with momentum")
+            optimizer = torch.optim.SGD(self.model.parameters(), lr=self.local_learning_rate, momentum=0.9)
+        else:
+            raise ValueError(f"Unknown optimizer: {self.optimizer}")
+
         seen_data_idx = 0
         label_list = []
         for step in range(self.num_local_updates):
@@ -386,7 +412,8 @@ class UserMultiStep(UserSingleStep):
             if self.clip_value > 0:
                 self._clip_list_of_grad_(grads_ref)
             self._apply_differential_noise(grads_ref)
-            preconditioner.step()
+            if self.optimizer == "kfac":
+                preconditioner.step()
             optimizer.step()
 
         # Share differential to server version:

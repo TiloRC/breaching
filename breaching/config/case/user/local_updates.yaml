@@ -13,6 +13,9 @@ local_diff_privacy:
   distribution: laplacian
   per_example_clipping: 0.0
 
+# which optimizer to use
+optimizer: "SGD"
+
 # Specific to this user type:
 num_local_updates: 4
 num_data_per_local_update_step: 1 # Every step is taken on a different sample
