@@ -412,8 +412,8 @@ def find_oneshot(rec_denormalized, ground_truth_denormalized):
     return one_shot_idx
 
 
-def load_reconstruction(trial, iteration):
-    load_path = Path("reconstructions") / f"trial_{trial}" / f"reconstruction_{iteration}.pt"
+def load_reconstruction(trial, iteration, device_str):
+    load_path = Path(device_str + "_reconstructions") / f"trial_{trial}" / f"reconstruction_{iteration}.pt"
     if load_path.exists():
         reconstruction = torch.load(load_path)
         return reconstruction
