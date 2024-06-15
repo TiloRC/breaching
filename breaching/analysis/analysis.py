@@ -7,6 +7,7 @@ from ..cases import construct_dataloader
 
 import copy
 import logging
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -409,3 +410,12 @@ def find_oneshot(rec_denormalized, ground_truth_denormalized):
     one_shot = (rec_denormalized - ground_truth_denormalized).pow(2)
     one_shot_idx = one_shot.view(one_shot.shape[0], -1).mean(dim=-1).argmin()
     return one_shot_idx
+
+
+def load_reconstruction(trial, iteration):
+    load_path = Path("reconstructions") / f"trial_{trial}" / f"reconstruction_{iteration}.pt"
+    if load_path.exists():
+        reconstruction = torch.load(load_path)
+        return reconstruction
+    else:
+        raise FileNotFoundError(f"No reconstruction found at {load_path}")

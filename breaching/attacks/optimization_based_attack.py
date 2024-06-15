@@ -20,6 +20,8 @@ import logging
 
 log = logging.getLogger(__name__)
 
+from pathlib import Path
+
 
 class OptimizationBasedAttacker(_BaseAttacker):
     """Implements a wide spectrum of optimization-based attacks."""
@@ -127,6 +129,7 @@ class OptimizationBasedAttacker(_BaseAttacker):
                         f" Task loss: {task_loss.item():2.4f} | T: {timestamp - current_wallclock:4.2f}s"
                     )
                     current_wallclock = timestamp
+                    self._save_reconstruction(candidate, iteration, trial)
 
                 if not torch.isfinite(objective_value):
                     log.info(f"Recovery loss is non-finite in iteration {iteration}. Cancelling reconstruction!")
@@ -216,3 +219,8 @@ class OptimizationBasedAttacker(_BaseAttacker):
         else:
             log.info("No valid reconstruction could be found.")
             return torch.zeros_like(optimal_solution)
+
+    def _save_reconstruction(self, candidate, iteration, trial):
+        save_path = Path("reconstructions") / f"trial_{trial}"
+        save_path.mkdir(parents=True, exist_ok=True)
+        torch.save(candidate.clone().cpu(), save_path / f"reconstruction_{iteration}.pt")
