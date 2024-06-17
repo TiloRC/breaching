@@ -2,6 +2,7 @@ import pytest
 from tilo_experiment import run_experiment
 import math
 import numpy
+import pandas as pd
 
 
 def test_run_experiment():
@@ -13,6 +14,10 @@ def test_run_experiment():
                          num_local_updates=1,
                          num_data_per_local_update_step=2)
 
+    assert isinstance(res, pd.DataFrame), "Result should be a pandas DataFrame"
     assert len(res) == math.ceil(max_iter / callback_iter) + 1
-    assert all(dic.keys() == {'mse', 'psnr', 'lpips', 'rpsnr', 'ssim', 'max_ssim', 'max_rpsnr', 'order', 'IIP-pixel',
-                              'feat_mse', 'parameters', 'label_acc'} for dic in res)
+    expected_columns = ['mse', 'psnr', 'lpips', 'rpsnr', 'ssim', 'max_ssim', 'max_rpsnr', 'order', 'IIP-pixel',
+                        'feat_mse', 'parameters', 'label_acc']
+    assert list(
+        res.columns) == expected_columns, f"DataFrame columns are not as expected. Expected: {expected_columns}, Got: {list(res.columns)}"
+

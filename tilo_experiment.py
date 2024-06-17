@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import logging, sys
 import torch
 import breaching
@@ -54,12 +55,11 @@ def run_experiment(gpu_index, max_iterations, optimizer="SGD", optim_callback=10
         metrics = breaching.analysis.report(reconstructed_data, true_user_data, [server_payload],
                                             server.model, order_batch=True, compute_full_iip=False,
                                             cfg_case=cfg.case, setup=setup, verbose=False)
+        metrics['iteration'] = iteration + 1
         results.append(metrics)
     reconstructed_user_data, stats = attacker.reconstruct([server_payload], [shared_data], {}, dryrun=cfg.dryrun, callback=calculate_metrics_callback)
 
-    reconstructed_user_data["labels"] = None # prevents weird bug with breaching.analysis.report
-
-    return results
+    return pd.DataFrame(results).set_index('iteration')
 
 
 if __name__ == "__main__":
