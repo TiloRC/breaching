@@ -10,7 +10,7 @@ def test_run_experiment():
     print(numpy.__version__)
     max_iter = 12
     callback_iter = 3
-    res = run_experiment(2, max_iter, optimizer="SGD", optim_callback=callback_iter, seed=47, num_data_points=2,
+    res = run_experiment(0, max_iter, optimizer="SGD", optim_callback=callback_iter, seed=47, num_data_points=2,
                          num_local_updates=1,
                          num_data_per_local_update_step=2)
 
@@ -32,12 +32,12 @@ def test_optimizers():
                 import kfac
             except ImportError:
                 continue
-        run_experiment(2, max_iter, optimizer=optim, optim_callback=callback_iter, seed=47, num_data_points=2,
+        run_experiment(0, max_iter, optimizer=optim, optim_callback=callback_iter, seed=47, num_data_points=2,
                          num_local_updates=1,
                          num_data_per_local_update_step=2)
 
     with pytest.raises(ValueError, match="Unknown optimizer: UnknownOptimizer"):
-        run_experiment(2, max_iter, optimizer="UnknownOptimizer", optim_callback=callback_iter, seed=47,
+        run_experiment(0, max_iter, optimizer="UnknownOptimizer", optim_callback=callback_iter, seed=47,
                        num_data_points=2,
                        num_local_updates=1, num_data_per_local_update_step=2)
 

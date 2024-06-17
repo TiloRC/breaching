@@ -52,7 +52,7 @@ def run_experiment(gpu_index, max_iterations, optimizer="SGD", optim_callback=10
     # Reconstruct data
     results = []
     def calculate_metrics_callback(candidate, iteration, trial, labels):
-        reconstructed_data = dict(data=candidate.clone().cpu(), labels=None)
+        reconstructed_data = dict(data=candidate, labels=None)
         metrics = breaching.analysis.report(reconstructed_data, true_user_data, [server_payload],
                                             server.model, order_batch=True, compute_full_iip=False,
                                             cfg_case=cfg.case, setup=setup, verbose=False)
