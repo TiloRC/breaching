@@ -2,6 +2,7 @@ import numpy as np
 import logging, sys
 import torch
 import breaching
+import sys
 
 
 def configure_experiment(cfg, num_data_points, num_local_updates, num_data_per_local_update_step, optimizer,
@@ -60,10 +61,15 @@ def run_experiment(gpu_index, max_iterations, optimizer="SGD", optim_callback=10
 
     return results
 
+
 if __name__ == "__main__":
-    run_experiment(2,1000, optimizer="SGD", optim_callback=100, seed=47, num_data_points=2, num_local_updates=1,
-                   num_data_per_local_update_step=2)
+    # some basic testing
+    if sys.argv[1] == "test":
+        import math
+        max_iter = 12
+        callback_iter = 3
+        res = run_experiment(2,max_iter, optimizer="SGD", optim_callback=callback_iter, seed=47, num_data_points=2, num_local_updates=1,
+                       num_data_per_local_update_step=2)
 
-    from breaching.analysis import load_reconstruction
-
-    load_reconstruction(0, 0, "cpu")
+        assert len(res) == math.ceil(max_iter / callback_iter) + 1
+        assert all(dic.keys() == {'mse', 'psnr', 'lpips', 'rpsnr', 'ssim', 'max_ssim', 'max_rpsnr', 'order', 'IIP-pixel', 'feat_mse', 'parameters', 'label_acc'} for dic in res)
