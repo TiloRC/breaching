@@ -23,8 +23,10 @@ def report(
     compute_ssim=True,
     cfg_case=None,
     setup=dict(device=torch.device("cpu"), dtype=torch.float),
+    verbose=True,
 ):
-    log.info("Starting evaluations for attack effectiveness report...")
+    if verbose:
+        log.info("Starting evaluations for attack effectiveness report...")
     model = copy.deepcopy(model_template)  # Copy just in case and discard later
     model.to(**setup)
     metadata = server_payload[0]["metadata"]
@@ -81,23 +83,25 @@ def report(
 
     if metadata["modality"] == "text":
         m = modality_metrics
-        log.info(
-            f"METRICS: | Accuracy: {m['accuracy']:2.4f} | S-BLEU: {m['sacrebleu']:4.2f} | FMSE: {feat_mse:2.4e} | "
-            + "\n"
-            f" G-BLEU: {m['google_bleu']:4.2f} | ROUGE1: {m['rouge1']:4.2f}| ROUGE2: {m['rouge2']:4.2f} | ROUGE-L: {m['rougeL']:4.2f}"
-            f"| Token Acc T:{m['token_acc']:2.2%}/A:{m['token_avg_accuracy']:2.2%} "
-            f"| Label Acc: {test_label_acc:2.2%}"
-        )
+        if verbose:
+            log.info(
+                f"METRICS: | Accuracy: {m['accuracy']:2.4f} | S-BLEU: {m['sacrebleu']:4.2f} | FMSE: {feat_mse:2.4e} | "
+                + "\n"
+                f" G-BLEU: {m['google_bleu']:4.2f} | ROUGE1: {m['rouge1']:4.2f}| ROUGE2: {m['rouge2']:4.2f} | ROUGE-L: {m['rougeL']:4.2f}"
+                f"| Token Acc T:{m['token_acc']:2.2%}/A:{m['token_avg_accuracy']:2.2%} "
+                f"| Label Acc: {test_label_acc:2.2%}"
+            )
 
     else:
         m = modality_metrics
         iip_scoring = " | ".join([f"{k}: {v:5.2%}" for k, v in m.items() if "IIP" in k])
-        log.info(
-            f"METRICS: | MSE: {m['mse']:2.4f} | PSNR: {m['psnr']:4.2f} | FMSE: {feat_mse:2.4e} | LPIPS: {m['lpips']:4.2f}|"
-            + "\n"
-            f" R-PSNR: {m['rpsnr']:4.2f} | {iip_scoring} | SSIM: {m['ssim']:2.4f} | "
-            f"max R-PSNR: {m['max_rpsnr']:4.2f} | max SSIM: {m['max_ssim']:2.4f} | Label Acc: {test_label_acc:2.2%}"
-        )
+        if verbose:
+            log.info(
+                f"METRICS: | MSE: {m['mse']:2.4f} | PSNR: {m['psnr']:4.2f} | FMSE: {feat_mse:2.4e} | LPIPS: {m['lpips']:4.2f}|"
+                + "\n"
+                f" R-PSNR: {m['rpsnr']:4.2f} | {iip_scoring} | SSIM: {m['ssim']:2.4f} | "
+                f"max R-PSNR: {m['max_rpsnr']:4.2f} | max SSIM: {m['max_ssim']:2.4f} | Label Acc: {test_label_acc:2.2%}"
+            )
 
     metrics = dict(
         **modality_metrics,
