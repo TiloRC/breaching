@@ -21,3 +21,18 @@ def test_run_experiment():
     assert list(
         res.columns) == expected_columns, f"DataFrame columns are not as expected. Expected: {expected_columns}, Got: {list(res.columns)}"
 
+
+def test_optimizers():
+    # make sure optmizers don't crash
+    max_iter = 1
+    callback_iter = 1
+    for optim in ["SGD", "KFAC", "Adam", "Adagrad", "RMSprop", "SGD_with_momentum", "Random"]:
+        if optim == "KFAC":
+            try:
+                import kfac
+            except ImportError:
+                continue
+        run_experiment(2, max_iter, optimizer=optim, optim_callback=callback_iter, seed=47, num_data_points=2,
+                         num_local_updates=1,
+                         num_data_per_local_update_step=2)
+
