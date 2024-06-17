@@ -4,6 +4,7 @@ import logging, sys
 import torch
 import breaching
 import sys
+import argparse
 
 
 def configure_experiment(cfg, num_data_points, num_local_updates, num_data_per_local_update_step, optimizer,
@@ -63,13 +64,18 @@ def run_experiment(gpu_index, max_iterations, optimizer="SGD", optim_callback=10
 
 
 if __name__ == "__main__":
-    # some basic testing
-    if sys.argv[1] == "test":
-        import math
-        max_iter = 12
-        callback_iter = 3
-        res = run_experiment(2,max_iter, optimizer="SGD", optim_callback=callback_iter, seed=47, num_data_points=2, num_local_updates=1,
-                       num_data_per_local_update_step=2)
+    parser = argparse.ArgumentParser(description='Run experiment and save results to a CSV file.')
+    parser.add_argument('gpu_index', type=int, help='GPU index to use.')
+    parser.add_argument('max_iterations', type=int, help='Maximum number of iterations.')
+    parser.add_argument('optimizer', type=str, help='Optimizer to use (e.g., SGD, Adam).')
+    parser.add_argument('output_csv', type=str, help='Output CSV file name.')
 
-        assert len(res) == math.ceil(max_iter / callback_iter) + 1
-        assert all(dic.keys() == {'mse', 'psnr', 'lpips', 'rpsnr', 'ssim', 'max_ssim', 'max_rpsnr', 'order', 'IIP-pixel', 'feat_mse', 'parameters', 'label_acc'} for dic in res)
+    args = parser.parse_args()
+    results_df = run_experiment(
+        gpu_index=args.gpu_index,
+        max_iterations=args.max_iterations,
+        optimizer=args.optimizer
+    )
+
+    results_df.to_csv(args.output_csv)
+
