@@ -10,7 +10,7 @@ def test_run_experiment():
     print(numpy.__version__)
     max_iter = 12
     callback_iter = 3
-    res = run_experiment(0, max_iter, optimizer="SGD", optim_callback=callback_iter, seed=47, num_data_points=2,
+    _, _, _, res = run_experiment(0, max_iter, optimizer="SGD", optim_callback=callback_iter, seed=47, num_data_points=2,
                          num_local_updates=1,
                          num_data_per_local_update_step=2)
 

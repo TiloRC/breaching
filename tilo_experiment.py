@@ -60,10 +60,11 @@ def run_experiment(gpu_index, max_iterations, optimizer="SGD", optim_callback=10
         results.append(metrics)
     reconstructed_user_data, stats = attacker.reconstruct([server_payload], [shared_data], {}, dryrun=cfg.dryrun, callback=calculate_metrics_callback)
 
-    return pd.DataFrame(results).set_index('iteration')
+    return user, true_user_data, reconstructed_user_data, pd.DataFrame(results).set_index('iteration')
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
     parser = argparse.ArgumentParser(description='Run experiment and save results to a CSV file.')
     parser.add_argument('gpu_index', type=int, help='GPU index to use.')
     parser.add_argument('max_iterations', type=int, help='Maximum number of iterations.')
@@ -71,11 +72,18 @@ if __name__ == "__main__":
     parser.add_argument('output_csv', type=str, help='Output CSV file name.')
 
     args = parser.parse_args()
-    results_df = run_experiment(
+    user, true_user_data, reconstructed_user_data, results_df = run_experiment(
         gpu_index=args.gpu_index,
         max_iterations=args.max_iterations,
         optimizer=args.optimizer
     )
 
-    results_df.to_csv(args.output_csv)
+    user.plot(true_user_data)
+    plt.savefig(args.output_csv +'_ground_truth.png')
+    user.plot(reconstructed_user_data)
+    plt.savefig(args.output_csv + '_reconstruction.png')
+
+    torch.save(true_user_data, args.output_csv + "_ground_truth.pt")
+    torch.save(reconstructed_user_data, args.output_csv + "_reconstruction.pt")
+    results_df.to_csv(args.output_csv + ".csv")
 
