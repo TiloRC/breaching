@@ -415,7 +415,8 @@ class UserMultiStep(UserSingleStep):
             if self.clip_value > 0:
                 self._clip_list_of_grad_(grads_ref)
             self._apply_differential_noise(grads_ref)
-            if self.optimizer == "kfac":
+            if self.optimizer == "KFAC":
+                print("Defintely using KFAC")
                 preconditioner.step()
             optimizer.step()
 
