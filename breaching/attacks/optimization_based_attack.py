@@ -62,7 +62,7 @@ class OptimizationBasedAttacker(_BaseAttacker):
         {(n + ' ' * 8).join([f'{key}: {val}' for key, val in self.cfg.optim.items()])}
         """
 
-    def reconstruct(self, server_payload, shared_data, server_secrets=None, initial_data=None, dryrun=False):
+    def reconstruct(self, server_payload, shared_data, server_secrets=None, initial_data=None, dryrun=False, callback=None):
         # Initialize stats module for later usage:
         rec_models, labels, stats = self.prepare_attack(server_payload, shared_data)
         # Main reconstruction loop starts here:
@@ -71,7 +71,7 @@ class OptimizationBasedAttacker(_BaseAttacker):
         try:
             for trial in range(self.cfg.restarts.num_trials):
                 candidate_solutions += [
-                    self._run_trial(rec_models, shared_data, labels, stats, trial, initial_data, dryrun)
+                    self._run_trial(rec_models, shared_data, labels, stats, trial, initial_data, dryrun, callback)
                 ]
                 scores[trial] = self._score_trial(candidate_solutions[trial], labels, rec_models, shared_data)
         except KeyboardInterrupt:
@@ -89,7 +89,7 @@ class OptimizationBasedAttacker(_BaseAttacker):
             reconstructed_data["labels"] = server_secrets["ClassAttack"]["all_labels"]
         return reconstructed_data, stats
 
-    def _run_trial(self, rec_model, shared_data, labels, stats, trial, initial_data=None, dryrun=False):
+    def _run_trial(self, rec_model, shared_data, labels, stats, trial, initial_data=None, dryrun=False, callback=None):
         """Run a single reconstruction trial."""
 
         # Initialize losses:
@@ -122,6 +122,9 @@ class OptimizationBasedAttacker(_BaseAttacker):
                         minimal_value_so_far = objective_value.detach()
                         best_candidate = candidate.detach().clone()
 
+                if iteration + 1 == self.cfg.optim.max_iterations or callback and iteration % self.cfg.optim.callback == 0:
+                    callback(best_candidate, iteration, trial, labels)
+
                 if iteration + 1 == self.cfg.optim.max_iterations or iteration % self.cfg.optim.callback == 0:
                     timestamp = time.time()
                     log.info(
@@ -129,7 +132,6 @@ class OptimizationBasedAttacker(_BaseAttacker):
                         f" Task loss: {task_loss.item():2.4f} | T: {timestamp - current_wallclock:4.2f}s"
                     )
                     current_wallclock = timestamp
-                    self._save_reconstruction(candidate, iteration, trial, labels)
 
                 if not torch.isfinite(objective_value):
                     log.info(f"Recovery loss is non-finite in iteration {iteration}. Cancelling reconstruction!")
@@ -220,9 +222,3 @@ class OptimizationBasedAttacker(_BaseAttacker):
             log.info("No valid reconstruction could be found.")
             return torch.zeros_like(optimal_solution)
 
-    def _save_reconstruction(self, candidate, iteration, trial, labels):
-        reconstructed_data = dict(data=candidate.clone().cpu(), labels=labels)
-        dev = str(self.setup["device"])
-        save_path = Path(dev+"_reconstructions") / f"trial_{trial}"
-        save_path.mkdir(parents=True, exist_ok=True)
-        torch.save(reconstructed_data, save_path / f"reconstruction_{iteration}.pt")

@@ -47,14 +47,18 @@ def run_experiment(gpu_index, max_iterations, optimizer="SGD", optim_callback=10
     user.plot(true_user_data)
 
     # Reconstruct data
-    reconstructed_user_data, stats = attacker.reconstruct([server_payload], [shared_data], {}, dryrun=cfg.dryrun)
+    results = []
+    def calculate_metrics_callback(candidate, iteration, trial, labels):
+        reconstructed_data = dict(data=candidate.clone().cpu(), labels=None)
+        metrics = breaching.analysis.report(reconstructed_data, true_user_data, [server_payload],
+                                            server.model, order_batch=True, compute_full_iip=False,
+                                            cfg_case=cfg.case, setup=setup, verbose=False)
+        results.append(metrics)
+    reconstructed_user_data, stats = attacker.reconstruct([server_payload], [shared_data], {}, dryrun=cfg.dryrun, callback=calculate_metrics_callback)
 
     reconstructed_user_data["labels"] = None # prevents weird bug with breaching.analysis.report
-    metrics = breaching.analysis.report(reconstructed_user_data, true_user_data, [server_payload],
-                                        server.model, order_batch=True, compute_full_iip=False,
-                                        cfg_case=cfg.case, setup=setup)
-    return metrics
 
+    return results
 
 if __name__ == "__main__":
     run_experiment(2,1000, optimizer="SGD", optim_callback=100, seed=47, num_data_points=2, num_local_updates=1,
