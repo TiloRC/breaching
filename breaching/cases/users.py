@@ -573,12 +573,11 @@ class MultiUserAggregate(UserMultiStep):
 class RandomOptimizer(torch.optim.Optimizer):
     def __init__(self, params, lr=0.1):
         defaults = dict(lr=lr)
-        super(RandomOptimizer, self).__init__(params, defaults)
+        super().__init__(params, defaults)
 
     def step(self, closure=None):
-        with torch.no_grad():
-            for group in self.param_groups:
-                for p in group['params']:
-                    if p.grad is not None:
-                        # Randomly update the parameters
-                        p.add_(torch.randn_like(p) * group['lr'])
+        for group in self.param_groups:
+            for p in group['params']:
+                if p.grad is not None:
+                    # Randomly update the parameters
+                    p.add_(torch.randn_like(p) * group['lr'])
