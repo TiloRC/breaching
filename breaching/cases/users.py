@@ -580,4 +580,4 @@ class RandomOptimizer(torch.optim.Optimizer):
             for p in group['params']:
                 if p.grad is not None:
                     # Randomly update the parameters
-                    p.add_(torch.randn_like(p) * group['lr'])
+                    p.add(torch.randn_like(p) * group['lr'])
