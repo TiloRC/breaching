@@ -5,6 +5,9 @@ import numpy
 import pandas as pd
 
 
+def test_dependencies():
+    from pytorch_wavelets import DTCWTForward
+
 def test_run_experiments():
     numpy.array([1, 2])
     print(numpy.__version__)
@@ -18,6 +21,8 @@ def test_run_experiments():
     assert len(res) == math.ceil(max_iter / callback_iter) + 1
     expected_columns = ['mse', 'psnr', 'lpips', 'rpsnr', 'ssim', 'max_ssim', 'max_rpsnr', 'order', 'IIP-pixel',
                         'feat_mse', 'parameters', 'label_acc']
+
+    assert [val >= 0 for val in res["ssim"]]
     assert list(
         res.columns) == expected_columns, f"DataFrame columns are not as expected. Expected: {expected_columns}, Got: {list(res.columns)}"
 
