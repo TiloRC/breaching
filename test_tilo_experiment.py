@@ -15,7 +15,8 @@ def test_run_experiments():
     callback_iter = 3
     res = run_experiments(0, max_iter, optimizer="SGD", callback_interval=callback_iter, seed=47, num_data_points=2,
                          num_local_updates=1,
-                         num_data_per_local_update_step=2)
+                         num_data_per_local_update_step=2,
+                          model = "linear")
 
     assert isinstance(res, pd.DataFrame), "Result should be a pandas DataFrame"
     assert len(res) == math.ceil(max_iter / callback_iter) + 1
@@ -39,7 +40,8 @@ def test_optimizers():
             except ImportError:
                 return
         run_experiments(0, max_iter, optimizer=optim, callback_interval=callback_iter, seed=47, num_data_points=2,
-                        num_local_updates=1, num_data_per_local_update_step=2)
+                        num_local_updates=1, num_data_per_local_update_step=2,
+                          model = "linear")
 
     run_optim_experiment("SGD")
     run_optim_experiment("KFAC")

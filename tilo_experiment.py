@@ -9,10 +9,10 @@ import os
 
 
 def configure_experiment(cfg, num_data_points, num_local_updates, num_data_per_local_update_step, optimizer,
-                         optim_callback, max_iterations):
+                         optim_callback, max_iterations, model):
     cfg.case.data.partition = "random"
     cfg.case.user.user_idx = 1
-    cfg.case.model = 'resnet18'
+    cfg.case.model = model
     cfg.case.user.provide_labels = True
     cfg.case.user.num_data_points = num_data_points
     cfg.case.user.num_local_updates = num_local_updates
@@ -26,7 +26,7 @@ def configure_experiment(cfg, num_data_points, num_local_updates, num_data_per_l
 
 def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
                    seed=47, experiment_repetitions=1, callback_interval=100,
-                   num_data_points=1, num_local_updates=1, num_data_per_local_update_step=1):
+                   num_data_points=1, num_local_updates=1, num_data_per_local_update_step=1, model='resnet18'):
     """
     Run a gradient inversion attack experiment to test the ability to reconstruct images
     given a particular optimizer and configuration.
@@ -83,7 +83,7 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
             print(name + " using cpu")
     setup = dict(device=device, dtype=getattr(torch, cfg.case.impl.dtype))
     cfg = configure_experiment(cfg, num_data_points, num_local_updates, num_data_per_local_update_step, optimizer,
-                               callback_interval, max_iterations)
+                               callback_interval, max_iterations, model)
 
     def run_experiment(id):
         # Construct components
