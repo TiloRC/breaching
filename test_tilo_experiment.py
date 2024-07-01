@@ -4,6 +4,13 @@ import math
 import numpy
 import pandas as pd
 
+def test_cuda():
+    import platform
+
+    if platform.system() == "Linux":
+        from torch import cuda
+        assert cuda.is_available()
+
 
 def test_dependencies():
     from pytorch_wavelets import DTCWTForward
