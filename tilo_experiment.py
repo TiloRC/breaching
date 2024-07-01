@@ -196,6 +196,7 @@ if __name__ == "__main__":
     parser.add_argument('gpu_index', type=int, help='GPU index to use.')
     parser.add_argument('max_iterations', type=int, help='Maximum number of iterations.')
     parser.add_argument('optimizer', type=str, help='Optimizer to use (e.g., SGD, Adam).')
+    parser.add_argument('model', type=str, help='Optimizer to use (e.g., resnet18, linear, covnetsmall).')
     parser.add_argument('experiment_name', type=str, help='Output CSV file name.')
     parser.add_argument('--callback_interval', type=int, help='Interval at which the callback function is called', default=100)
     parser.add_argument('--batch_size', type=int, help='Number of images to use when calculating update',
@@ -210,6 +211,7 @@ if __name__ == "__main__":
         gpu_index=args.gpu_index,
         max_iterations=args.max_iterations,
         optimizer=args.optimizer,
+        model=args.model,
         experiment_repetitions=args.repetitions,
         callback_interval=args.callback_interval,
         num_data_points=args.batch_size, num_local_updates=1, num_data_per_local_update_step=args.batch_size
