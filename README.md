@@ -37,11 +37,13 @@ pip install .
 ```
 
 
-## Notes for myself for how to get everything working on chameloen instance 
+## Notes for myself for how to get everything working on chameleon instance
 
 First install miniconda with bash script from https://docs.anaconda.com/miniconda/#quick-command-line-install
 
 Then create a conda enviorment with the right version of python (https://stackoverflow.com/questions/56713744/how-to-create-conda-environment-with-specific-python-version)
+
+IMPORTANT: install pytorch with https://pytorch.org/get-started/locally/ before following the above steps. 
 
 Finally do the above steps for installing kfac, etc. 
 
