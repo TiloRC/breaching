@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# move to the results directory, so all files are created there
-cd ../results
 
 # Predefined values
 GPU_INDEX=0
@@ -47,6 +45,9 @@ if [ "$RUN_PYTEST" = true ]; then
         exit 1
     fi
 fi
+
+# move to the results directory, so all files are created there
+cd ../results
 
 # Function to run the experiment
 run_experiment() {
