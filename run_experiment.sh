@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# move to the results directory, so all files are created there
+cd ../results
+
 # Predefined values
 GPU_INDEX=0
 MAX_ITERATIONS=10
@@ -51,7 +54,7 @@ run_experiment() {
     local experiment_name=$2
 
     echo "Starting experiment with optimizer: $optimizer"
-    nohup python3 tilo_experiment.py $GPU_INDEX $MAX_ITERATIONS $optimizer $MODEL $experiment_name --callback_interval $CALLBACK_INTERVAL --batch_size $BATCH_SIZE --repetitions $REPETITIONS > ${experiment_name}.out 2>&1 &
+    nohup python3 ../breaching/tilo_experiment.py $GPU_INDEX $MAX_ITERATIONS $optimizer $MODEL $experiment_name --callback_interval $CALLBACK_INTERVAL --batch_size $BATCH_SIZE --repetitions $REPETITIONS > ${experiment_name}.out 2>&1 &
 
     # Wait for the current experiment to finish
     wait $!
