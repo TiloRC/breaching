@@ -37,10 +37,10 @@ def test_run_experiments():
 
 def test_optimizers():
     # make sure optimizers don't crash
-    max_iter = 1
+    max_iter = 2
     callback_iter = 1
 
-    def run_optim_experiment(optim):
+    def run_optim_experiment(optim, model="linear"):
         if optim == "KFAC":
             try:
                 import kfac
@@ -48,7 +48,7 @@ def test_optimizers():
                 return
         run_experiments(0, max_iter, optimizer=optim, callback_interval=callback_iter, seed=47, num_data_points=2,
                         num_local_updates=1, num_data_per_local_update_step=2,
-                          model = "linear")
+                          model = model)
 
     run_optim_experiment("SGD")
     run_optim_experiment("KFAC")
@@ -56,7 +56,9 @@ def test_optimizers():
     run_optim_experiment("Adagrad")
     run_optim_experiment("RMSprop")
     run_optim_experiment("SGD_with_momentum")
+    run_optim_experiment("LBFGS")
     run_optim_experiment("Random")
+    run_optim_experiment("Random", "convnetsmall")
 
     with pytest.raises(ValueError, match="Unknown optimizer: UnknownOptimizer"):
         run_optim_experiment("UnknownOptimizer")

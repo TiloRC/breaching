@@ -372,7 +372,6 @@ class UserMultiStep(UserSingleStep):
             print("Using Adam")
             optimizer = torch.optim.Adam(self.model.parameters(), lr=self.local_learning_rate)
         elif self.optimizer == "LBFGS":
-            raise NotImplementedError("Need to address this error—— TypeError: LBFGS.step() missing 1 required positional argument: 'closure'")
             print("Using L-BFGS")
             optimizer = torch.optim.LBFGS(self.model.parameters(), lr=self.local_learning_rate)
         elif self.optimizer == "Adagrad":
@@ -418,7 +417,17 @@ class UserMultiStep(UserSingleStep):
             if self.optimizer == "KFAC":
                 print("Defintely using KFAC")
                 preconditioner.step()
-            optimizer.step()
+
+            if self.optimizer == "LBFGS":
+                def closure():
+                    optimizer.zero_grad()
+                    outputs = self.model(**data)
+                    loss = self.loss(outputs, data["labels"])
+                    loss.backward()
+                    return loss
+                optimizer.step(closure)
+            else:
+                optimizer.step()
 
         # Share differential to server version:
         # This is equivalent to sending the new stuff and letting the server do it, but in line
