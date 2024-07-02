@@ -1,19 +1,18 @@
 #!/bin/bash
 
-
 # Predefined values
 GPU_INDEX=0
 MAX_ITERATIONS=10
-MODEL="covnetsmall"
-CALLBACK_INTERVAL=100  # Default value 100
-BATCH_SIZE=1           # Default value 1
-REPETITIONS=1          # Default value 1
+MODEL="convnetsmall"
+CALLBACK_INTERVAL=50  # Default value 100
+BATCH_SIZES=(1 2 4 8) # List of batch sizes
+REPETITIONS=15         # Default value 1
 
 # Experiment group name
-EXPERIMENT_GROUP="group_1"
+EXPERIMENT_GROUP="Jul2"
 
 # List of optimizers
-OPTIMIZERS=("SGD")
+OPTIMIZERS=("KFAC" "LBFGS" "Adam" "Adagrad" "RMSprop" "SGD_with_momentum" "SGD")
 
 # Function to display usage
 usage() {
@@ -52,20 +51,23 @@ cd ../results
 # Function to run the experiment
 run_experiment() {
     local optimizer=$1
-    local experiment_name=$2
+    local batch_size=$2
+    local experiment_name=$3
 
-    echo "Starting experiment with optimizer: $optimizer"
-    nohup python3 ../breaching/tilo_experiment.py $GPU_INDEX $MAX_ITERATIONS $optimizer $MODEL $experiment_name --callback_interval $CALLBACK_INTERVAL --batch_size $BATCH_SIZE --repetitions $REPETITIONS > ${experiment_name}.out 2>&1 &
+    echo "Starting experiment with optimizer: $optimizer and batch size: $batch_size"
+    nohup python3 ../breaching/tilo_experiment.py $GPU_INDEX $MAX_ITERATIONS $optimizer $MODEL $experiment_name --callback_interval $CALLBACK_INTERVAL --batch_size $batch_size --repetitions $REPETITIONS > ${experiment_name}.out 2>&1 &
 
     # Wait for the current experiment to finish
     wait $!
     echo "Experiment $experiment_name finished."
 }
 
-# Loop through the list of optimizers and run the experiment for each one
+# Loop through the list of optimizers and batch sizes, and run the experiment for each combination
 for optimizer in "${OPTIMIZERS[@]}"; do
-    experiment_name="${EXPERIMENT_GROUP}_experiment_${optimizer}"
-    run_experiment $optimizer $experiment_name
+    for batch_size in "${BATCH_SIZES[@]}"; do
+        experiment_name="${EXPERIMENT_GROUP}_experiment_${optimizer}_batch_size_${batch_size}"
+        run_experiment $optimizer $batch_size $experiment_name
+    done
 done
 
 echo "All experiments completed."
