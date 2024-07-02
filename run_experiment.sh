@@ -2,7 +2,7 @@
 
 # Predefined values
 GPU_INDEX=0
-MAX_ITERATIONS=10
+MAX_ITERATIONS=5000
 MODEL="convnetsmall"
 CALLBACK_INTERVAL=50  # Default value 100
 BATCH_SIZES=(1 2 4 8) # List of batch sizes
