@@ -19,6 +19,7 @@ pip install .
 git clone -b compatible https://github.com/TiloRC/kfac-pytorch
 cd kfac-pytorch
 pip install .
+cd ..
 ```
 
 ### How to get SSIM metric working
@@ -34,6 +35,13 @@ then install pytorch_wavelets
 git clone https://github.com/fbcotter/pytorch_wavelets
 cd pytorch_wavelets
 pip install .
+cd ..
+```
+
+### Misc
+
+```bash
+pip install pytest pandas matplotlib
 ```
 
 
