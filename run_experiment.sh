@@ -70,4 +70,7 @@ for optimizer in "${OPTIMIZERS[@]}"; do
     done
 done
 
+# Tar all of the folders at the end
+tar -czf ${EXPERIMENT_GROUP}_results.tar.gz ${EXPERIMENT_GROUP}_experiment_*
+
 echo "All experiments completed."
