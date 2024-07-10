@@ -209,9 +209,21 @@ if __name__ == "__main__":
     parser.add_argument('--callback_interval', type=int, help='Interval at which the callback function is called', default=100)
     parser.add_argument('--batch_size', type=int, help='Number of images to use when calculating update',
                         default=1)
+    parser.add_argument('--epoch_count', type=int, help='Number of epochs',
+                        default=1)
+    parser.add_argument('--image_count', type=int, help='Number of images to use in total',
+                        default=1)
     parser.add_argument('--repetitions', type=int, help='Number of times to repeat experiment with different images',
                         default=1)
     args = parser.parse_args()
+
+    if args.batch_size < args.image_count:
+        raise ValueError('Batch size cannot be less than the number of images.')
+
+    if args.image_count % args.batch_size != 0:
+        raise ValueError('Batch size must cleanly divide the number of images.')
+
+    num_local_updates = (args.image_count / args.batch_size)*args.epoch_count
 
 
     run_experiments(
@@ -222,7 +234,7 @@ if __name__ == "__main__":
         model=args.model,
         experiment_repetitions=args.repetitions,
         callback_interval=args.callback_interval,
-        num_data_points=args.batch_size, num_local_updates=1, num_data_per_local_update_step=args.batch_size
+        num_data_points=args.image_count, num_local_updates=num_local_updates, num_data_per_local_update_step=args.batch_size
     )
 
     # folder = args.experiment_name + "/"
