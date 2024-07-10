@@ -4,7 +4,7 @@ run_experiment.sh#!/bin/bash
 GPU_INDEX=0
 MAX_ITERATIONS=2500
 MODEL="convnetsmall"
-CALLBACK_INTERVAL= $(( MAX_ITERATIONS / 10 ))
+CALLBACK_INTERVAL=$(( MAX_ITERATIONS / 10 ))
 BATCH_SIZES=(1) # List of batch sizes
 REPETITIONS=10         # Default value 1
 
