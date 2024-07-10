@@ -96,6 +96,9 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
         shared_data, true_user_data = user.compute_local_updates(server_payload)
         user.plot(true_user_data)
 
+        # save update
+        torch.save(shared_data, name +"/" +"_" + id + "_shared_data.pt")
+
         # Reconstruct data
         results = []
         def calculate_metrics_callback(candidate, iteration, trial, labels, loss, time):
