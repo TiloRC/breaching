@@ -217,8 +217,8 @@ if __name__ == "__main__":
                         default=1)
     args = parser.parse_args()
 
-    if args.batch_size < args.image_count:
-        raise ValueError('Batch size cannot be less than the number of images.')
+    if args.batch_size > args.image_count:
+        raise ValueError('Batch size cannot be more than the number of images.')
 
     if args.image_count % args.batch_size != 0:
         raise ValueError('Batch size must cleanly divide the number of images.')
