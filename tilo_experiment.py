@@ -223,7 +223,7 @@ if __name__ == "__main__":
     if args.image_count % args.batch_size != 0:
         raise ValueError('Batch size must cleanly divide the number of images.')
 
-    num_local_updates = (args.image_count / args.batch_size)*args.epoch_count
+    num_local_updates = int((args.image_count / args.batch_size)*args.epoch_count)
 
 
     run_experiments(
