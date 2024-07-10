@@ -28,7 +28,7 @@ def test_run_experiments():
     assert isinstance(res, pd.DataFrame), "Result should be a pandas DataFrame"
     assert len(res) == math.ceil(max_iter / callback_iter) + 1
     expected_columns = ['mse', 'psnr', 'lpips', 'rpsnr', 'ssim', 'max_ssim', 'max_rpsnr', 'order', 'IIP-pixel',
-                        'feat_mse', 'parameters', 'label_acc']
+                        'feat_mse', 'parameters', 'label_acc', 'loss', 'time', 'algorithm', 'model']
 
     assert [val >= 0 for val in res["ssim"]]
     assert list(

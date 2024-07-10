@@ -1,18 +1,18 @@
-#!/bin/bash
+run_experiment.sh#!/bin/bash
 
 # Predefined values
 GPU_INDEX=0
 MAX_ITERATIONS=5000
 MODEL="convnetsmall"
-CALLBACK_INTERVAL=50  # Default value 100
-BATCH_SIZES=(1 2 4 8) # List of batch sizes
+CALLBACK_INTERVAL=50
+BATCH_SIZES=(1) # List of batch sizes
 REPETITIONS=15         # Default value 1
 
 # Experiment group name
 EXPERIMENT_GROUP="Jul2"
 
 # List of optimizers
-OPTIMIZERS=("KFAC" "LBFGS" "Adam" "Adagrad" "RMSprop" "SGD_with_momentum" "SGD")
+OPTIMIZERS=("SGD")
 
 # Function to display usage
 usage() {

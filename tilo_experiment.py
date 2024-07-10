@@ -98,13 +98,15 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
 
         # Reconstruct data
         results = []
-        def calculate_metrics_callback(candidate, iteration, trial, labels):
+        def calculate_metrics_callback(candidate, iteration, trial, labels, loss, time):
             # save metrics data
             reconstructed_data = dict(data=candidate, labels=None)
             metrics = breaching.analysis.report(reconstructed_data, true_user_data, [server_payload],
                                                 server.model, order_batch=True, compute_full_iip=False,
                                                 cfg_case=cfg.case, setup=setup, verbose=False)
             metrics['iteration'] = iteration + 1
+            metrics['loss'] = loss
+            metrics['time'] = time
             results.append(metrics)
 
             if name is not None:
@@ -142,6 +144,8 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
         dataframes.append(results_df)
 
     all_results = pd.concat(dataframes).set_index(['experiment_id', 'iteration'])
+    all_results["algorithm"] = optimizer
+    all_results["model"] = model
     if name is not None:
         all_results.to_csv(folder + name  +".csv")
     return all_results

@@ -123,7 +123,7 @@ class OptimizationBasedAttacker(_BaseAttacker):
                         best_candidate = candidate.detach().clone()
 
                 if iteration + 1 == self.cfg.optim.max_iterations or callback and iteration % self.cfg.optim.callback == 0:
-                    callback(best_candidate, iteration, trial, labels)
+                    callback(best_candidate, iteration, trial, labels, task_loss.item(), time.time())
 
                 if iteration + 1 == self.cfg.optim.max_iterations or iteration % self.cfg.optim.callback == 0:
                     timestamp = time.time()
