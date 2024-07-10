@@ -96,8 +96,6 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
         shared_data, true_user_data = user.compute_local_updates(server_payload)
         user.plot(true_user_data)
 
-        # save update
-        torch.save(shared_data, name +"/" +"_" + "id" + "_shared_data.pt")
 
         # Reconstruct data
         results = []
@@ -118,7 +116,7 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
 
         reconstructed_user_data, stats = attacker.reconstruct([server_payload], [shared_data], {}, dryrun=cfg.dryrun, callback=calculate_metrics_callback)
 
-        return user, true_user_data, reconstructed_user_data, pd.DataFrame(results)
+        return user, true_user_data, reconstructed_user_data, pd.DataFrame(results), shared_data
 
     if name is not None:
         folder = name + "/"
@@ -130,7 +128,7 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
         experiment_id = "n" + str(i)
         if name is not None:
             make_folder(folder + "/inprogress_" + experiment_id)
-        user, true_user_data, reconstructed_user_data, results_df = run_experiment(experiment_id)
+        user, true_user_data, reconstructed_user_data, results_df, shared_data = run_experiment(experiment_id)
 
 
         if name is not None:
@@ -142,6 +140,9 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
             torch.save(true_user_data, folder + name + "_"+experiment_id + "_ground_truth.pt")
             torch.save(reconstructed_user_data, folder + name + "_"+experiment_id + "_reconstruction.pt")
             results_df.set_index('iteration').to_csv(folder + name + "_"+experiment_id + ".csv")
+
+            # save shared update
+            torch.save(shared_data, folder + name + "_" + experiment_id + "_shared_data.pt")
 
         results_df['experiment_id'] = experiment_id
         dataframes.append(results_df)
