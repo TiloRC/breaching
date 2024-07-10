@@ -97,7 +97,7 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
         user.plot(true_user_data)
 
         # save update
-        torch.save(shared_data, name +"/" +"_" + id + "_shared_data.pt")
+        torch.save(shared_data, name +"/" +"_" + "id" + "_shared_data.pt")
 
         # Reconstruct data
         results = []
