@@ -2,14 +2,14 @@ run_experiment.sh#!/bin/bash
 
 # Predefined values
 GPU_INDEX=0
-MAX_ITERATIONS=5000
+MAX_ITERATIONS=2500
 MODEL="convnetsmall"
-CALLBACK_INTERVAL=50
+CALLBACK_INTERVAL= $(( MAX_ITERATIONS / 10 ))
 BATCH_SIZES=(1) # List of batch sizes
-REPETITIONS=15         # Default value 1
+REPETITIONS=10         # Default value 1
 
 # Experiment group name
-EXPERIMENT_GROUP="Jul2"
+EXPERIMENT_GROUP="fast_default"
 
 # List of optimizers
 OPTIMIZERS=("SGD")

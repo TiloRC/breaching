@@ -9,10 +9,10 @@ BATCH_SIZES=(1) # List of batch sizes
 REPETITIONS=10         # Default value 1
 
 # Experiment group name
-EXPERIMENT_GROUP="fast_default"
+EXPERIMENT_GROUP="fast_optimizer"
 
 # List of optimizers
-OPTIMIZERS=("SGD")
+OPTIMIZERS=("SGD" "KFAC" "Adagrad" "Adam" "LBFGS" "RMSprop" "SGD_with_momentum")
 
 # Function to display usage
 usage() {
