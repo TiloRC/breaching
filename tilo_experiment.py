@@ -148,8 +148,6 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
         dataframes.append(results_df)
 
     all_results = pd.concat(dataframes).set_index(['experiment_id', 'iteration'])
-    all_results["algorithm"] = optimizer
-    all_results["model"] = model
     if name is not None:
         all_results.to_csv(folder + name  +".csv")
     return all_results
@@ -226,7 +224,7 @@ if __name__ == "__main__":
     num_local_updates = int((args.image_count / args.batch_size)*args.epoch_count)
 
 
-    run_experiments(
+    result  = run_experiments(
         name= args.experiment_name,
         gpu_index=args.gpu_index,
         max_iterations=args.max_iterations,
@@ -236,6 +234,14 @@ if __name__ == "__main__":
         callback_interval=args.callback_interval,
         num_data_points=args.image_count, num_local_updates=num_local_updates, num_data_per_local_update_step=args.batch_size
     )
+
+    result["algorithm"] = args.optimizer
+    result["model"] = args.model
+    result["batch_size"] = args.batch_size
+    result["image_count"] = args.image_count
+    result["epoch_count"] = args.epoch_count
+    result["num_local_updates"] = num_local_updates
+    result.to_csv(args.experiment_name +".csv")
 
     # folder = args.experiment_name + "/"
     # user.plot(true_user_data)
