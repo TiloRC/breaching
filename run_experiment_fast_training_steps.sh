@@ -1,4 +1,4 @@
-run_experiment.sh#!/bin/bash
+#!/bin/bash
 
 # Predefined values
 GPU_INDEX=0
@@ -8,7 +8,7 @@ CALLBACK_INTERVAL=$(( MAX_ITERATIONS / 10 ))
 BATCH_SIZES=(4 8) # List of batch sizes
 IMAGE_COUNT=8
 REPETITIONS=10         # Default value 1
-
+EPOCH_COUNTS=(1 2 4 8 16)  # List of epoch counts
 
 # Experiment group name
 EXPERIMENT_GROUP="fast_training_step"
@@ -54,21 +54,24 @@ cd ../results
 run_experiment() {
     local optimizer=$1
     local batch_size=$2
-    local experiment_name=$3
+    local epoch_count=$3
+    local experiment_name=$4
 
-    echo "Starting experiment with optimizer: $optimizer and batch size: $batch_size"
-    nohup python3 ../breaching/tilo_experiment.py $GPU_INDEX $MAX_ITERATIONS $optimizer $MODEL $experiment_name --callback_interval $CALLBACK_INTERVAL --batch_size $batch_size --image_count $IMAGE_COUNT --repetitions $REPETITIONS > ${experiment_name}.out 2>&1 &
+    echo "Starting experiment with optimizer: $optimizer, batch size: $batch_size, and epoch count: $epoch_count"
+    nohup python3 ../breaching/tilo_experiment.py $GPU_INDEX $MAX_ITERATIONS $optimizer $MODEL $experiment_name --callback_interval $CALLBACK_INTERVAL --batch_size $batch_size --image_count $IMAGE_COUNT --repetitions $REPETITIONS --epoch_count $epoch_count > ${experiment_name}.out 2>&1 &
 
     # Wait for the current experiment to finish
     wait $!
     echo "Experiment $experiment_name finished."
 }
 
-# Loop through the list of optimizers and batch sizes, and run the experiment for each combination
+# Loop through the list of optimizers, batch sizes, and epoch counts, and run the experiment for each combination
 for optimizer in "${OPTIMIZERS[@]}"; do
     for batch_size in "${BATCH_SIZES[@]}"; do
-        experiment_name="${EXPERIMENT_GROUP}_experiment_${optimizer}_batch_size_${batch_size}"
-        run_experiment $optimizer $batch_size $experiment_name
+        for epoch_count in "${EPOCH_COUNTS[@]}"; do
+            experiment_name="${EXPERIMENT_GROUP}_experiment_${optimizer}_batch_size_${batch_size}_epochs_${epoch_count}"
+            run_experiment $optimizer $batch_size $epoch_count $experiment_name
+        done
     done
 done
 
