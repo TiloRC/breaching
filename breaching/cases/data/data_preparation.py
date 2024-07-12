@@ -4,6 +4,10 @@ Data Config Structure (cfg_data): See config/data
 
 
 import torch
+from torch.utils.data import Sampler
+import numpy as np
+import random
+import math
 
 from .cached_dataset import CachedDataset
 
@@ -53,7 +57,10 @@ def construct_dataloader(cfg_data, cfg_impl, user_idx=0, return_full_dataset=Fal
     else:
         num_workers = 0
 
-    if cfg_impl.shuffle:
+
+    if cfg_data.classes_per_batch is not None:
+        data_sampler = MultiLabelSampler(dataset, cfg_data.classes_per_batch, cfg_data.batch_size)
+    elif cfg_impl.shuffle:
         data_sampler = torch.utils.data.RandomSampler(dataset, replacement=cfg_impl.sample_with_replacement)
     else:
         data_sampler = torch.utils.data.SequentialSampler(dataset)
@@ -71,3 +78,35 @@ def construct_dataloader(cfg_data, cfg_impl, user_idx=0, return_full_dataset=Fal
     dataloader.name = cfg_data.name
 
     return dataloader
+
+
+class MultiLabelSampler(Sampler):
+    def __init__(self, dataset, num_classes, batch_size):
+        self.indices = []
+
+        # Shuffle dataset indices
+        shuffled_indices = list(range(len(dataset)))
+        random.shuffle(shuffled_indices)
+
+        max_intances_per_label = math.ceil(batch_size / num_classes)
+
+        counts = {}
+
+        for i in shuffled_indices:
+            _, lbl = dataset[i]
+
+            if lbl in counts and counts[lbl] < max_intances_per_label:
+                self.indices.append(i)
+                counts[lbl] += 1
+            elif len(counts) < num_classes:
+                self.indices.append(i)
+                counts[lbl] = 1
+
+            if sum(counts.values()) == batch_size:
+                break
+
+    def __iter__(self):
+        return iter(self.indices)
+
+    def __len__(self):
+        return len(self.indices)

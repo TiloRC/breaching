@@ -3,6 +3,9 @@ from tilo_experiment import run_experiments
 import math
 import numpy
 import pandas as pd
+from breaching import get_config
+from breaching.cases import construct_dataloader, construct_case
+import torch
 
 def test_cuda():
     import platform
@@ -62,3 +65,16 @@ def test_optimizers():
 
     with pytest.raises(ValueError, match="Unknown optimizer: UnknownOptimizer"):
         run_optim_experiment("UnknownOptimizer")
+
+def test_batch_heterogeneity():
+    device =  torch.device('cpu')
+    cfg = get_config(overrides=["case=4_fedavg_small_scale", "case/data=CIFAR10"])
+    cfg.case.data.classes_per_batch = 2
+    cfg.case.data.batch_size = 4
+    setup = dict(device=device, dtype=getattr(torch, cfg.case.impl.dtype))
+    loader = construct_dataloader(cfg.case.data, cfg.case.impl)
+    user, server, model, loss_fn = construct_case(cfg.case, setup)
+    server_payload = server.distribute_payload()
+    shared_data, true_user_data = user.compute_local_updates(server_payload)
+    assert len(torch.unique(true_user_data['labels'])) == cfg.case.data.classes_per_batch
+
