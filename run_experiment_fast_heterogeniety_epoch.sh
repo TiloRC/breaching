@@ -2,14 +2,14 @@
 
 # Predefined values
 GPU_INDEX=0
-MAX_ITERATIONS=1000
+MAX_ITERATIONS=500
 MODEL="convnetsmall"
-CALLBACK_INTERVAL=$(( MAX_ITERATIONS / 10 ))
+CALLBACK_INTERVAL=$(( MAX_ITERATIONS / 5 ))
 BATCH_SIZE=8        # Single batch size
 IMAGE_COUNT=8       # Assuming same as BATCH_SIZE
 REPETITIONS=10      # Default value 1
-CLASSES_PER_BATCH=(1 2 3 4 5 6 7 8)
-EPOCH_COUNTS=(1 2 4 8 16)  # List of epoch counts
+CLASSES_PER_BATCH=(1 4 8)
+EPOCH_COUNTS=(1 4 16)  # List of epoch counts
 
 # Experiment group name
 EXPERIMENT_GROUP="classes_and_epochs"
