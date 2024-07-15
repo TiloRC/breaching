@@ -6,6 +6,7 @@ import pandas as pd
 from breaching import get_config
 from breaching.cases import construct_dataloader, construct_case
 import torch
+from collections import Counter
 
 def test_cuda():
     import platform
@@ -67,14 +68,38 @@ def test_optimizers():
         run_optim_experiment("UnknownOptimizer")
 
 def test_batch_heterogeneity():
-    device =  torch.device('cpu')
+    def get_data(cfg):
+        device = torch.device('cpu')
+        setup = dict(device=device, dtype=getattr(torch, cfg.case.impl.dtype))
+        loader = construct_dataloader(cfg.case.data, cfg.case.impl)
+        user, server, model, loss_fn = construct_case(cfg.case, setup)
+        server_payload = server.distribute_payload()
+        shared_data, true_user_data = user.compute_local_updates(server_payload)
+        return true_user_data
+
+    # batch_size == 4
     cfg = get_config(overrides=["case=4_fedavg_small_scale", "case/data=CIFAR10"])
     cfg.case.data.classes_per_batch = 2
     cfg.case.data.batch_size = 4
-    setup = dict(device=device, dtype=getattr(torch, cfg.case.impl.dtype))
-    loader = construct_dataloader(cfg.case.data, cfg.case.impl)
-    user, server, model, loss_fn = construct_case(cfg.case, setup)
-    server_payload = server.distribute_payload()
-    shared_data, true_user_data = user.compute_local_updates(server_payload)
-    assert len(torch.unique(true_user_data['labels'])) == cfg.case.data.classes_per_batch
+    cfg.case.user.num_data_points = 4
+    max_observations_per_class = math.ceil(cfg.case.data.batch_size / cfg.case.data.classes_per_batch)
+    true_user_data = get_data(cfg)
 
+    labels = true_user_data['labels'].tolist()
+    assert len(labels) == cfg.case.data.batch_size
+    assert len(set(labels)) == cfg.case.data.classes_per_batch
+    assert all(val <= max_observations_per_class for val in Counter(labels).values())
+
+
+    # batch_size == 8
+    cfg = get_config(overrides=["case=4_fedavg_small_scale", "case/data=CIFAR10"])
+    cfg.case.data.classes_per_batch = 2
+    cfg.case.data.batch_size = 8
+    cfg.case.user.num_data_points = 8
+    max_observations_per_class = math.ceil(cfg.case.data.batch_size / cfg.case.data.classes_per_batch)
+    true_user_data = get_data(cfg)
+
+    labels = true_user_data['labels'].tolist()
+    assert len(labels) == cfg.case.data.batch_size
+    assert len(set(labels)) == cfg.case.data.classes_per_batch
+    assert all(val <= max_observations_per_class for val in Counter(labels).values())

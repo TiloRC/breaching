@@ -9,7 +9,7 @@ import os
 
 
 def configure_experiment(cfg, num_data_points, num_local_updates, num_data_per_local_update_step, optimizer,
-                         optim_callback, max_iterations, model):
+                         optim_callback, max_iterations, model, classes_per_batch):
     cfg.case.data.partition = "random"
     cfg.case.user.user_idx = 1
     cfg.case.model = model
@@ -21,12 +21,14 @@ def configure_experiment(cfg, num_data_points, num_local_updates, num_data_per_l
     cfg.case.user.optimizer = optimizer
     cfg.attack.optim.callback = optim_callback
     cfg.attack.optim.max_iterations = max_iterations
+    cfg.case.data.classes_per_batch = classes_per_batch
     return cfg
 
 
 def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
                    seed=47, experiment_repetitions=1, callback_interval=100,
-                   num_data_points=1, num_local_updates=1, num_data_per_local_update_step=1, model='resnet18'):
+                   num_data_points=1, num_local_updates=1, num_data_per_local_update_step=1, model='resnet18',
+                    classes_per_batch=None):
     """
     Run a gradient inversion attack experiment to test the ability to reconstruct images
     given a particular optimizer and configuration.
@@ -83,7 +85,7 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
             print(name + " using cpu")
     setup = dict(device=device, dtype=getattr(torch, cfg.case.impl.dtype))
     cfg = configure_experiment(cfg, num_data_points, num_local_updates, num_data_per_local_update_step, optimizer,
-                               callback_interval, max_iterations, model)
+                               callback_interval, max_iterations, model, classes_per_batch)
 
     def run_experiment(id):
         # Construct components
@@ -212,6 +214,8 @@ if __name__ == "__main__":
     parser.add_argument('--image_count', type=int, help='Number of images to use in total',
                         default=1)
     parser.add_argument('--repetitions', type=int, help='Number of times to repeat experiment with different images',
+                        default=1)
+    parser.add_argument('--classes_per_batch', type=int, help='',
                         default=1)
     args = parser.parse_args()
 
