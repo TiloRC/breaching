@@ -10,7 +10,7 @@ REPETITIONS=10      # Default value 1
 CLASSES_PER_BATCH=(1 2 3 4 5 6 7 8)
 
 # Experiment group name
-EXPERIMENT_GROUP="fast_heterogeneity"
+EXPERIMENT_GROUP="slow_heterogeneity"
 
 # List of optimizers as an array
 OPTIMIZERS=("SGD")
