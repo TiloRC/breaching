@@ -236,7 +236,9 @@ if __name__ == "__main__":
         model=args.model,
         experiment_repetitions=args.repetitions,
         callback_interval=args.callback_interval,
-        num_data_points=args.image_count, num_local_updates=num_local_updates, num_data_per_local_update_step=args.batch_size
+        num_data_points=args.image_count, num_local_updates=num_local_updates,
+        num_data_per_local_update_step=args.batch_size,
+        classes_per_batch = args.classes_per_batch
     )
 
     result["algorithm"] = args.optimizer
@@ -245,6 +247,7 @@ if __name__ == "__main__":
     result["image_count"] = args.image_count
     result["epoch_count"] = args.epoch_count
     result["num_local_updates"] = num_local_updates
+    result["classes_per_batch"] = args.classes_per_batch
     result.to_csv(args.experiment_name +".csv")
 
     # folder = args.experiment_name + "/"
