@@ -12,7 +12,7 @@ CLASSES_PER_BATCH=(1)
 EPOCH_COUNTS=(1 2 4 8)  # List of epoch counts
 
 # Experiment group name
-EXPERIMENT_GROUP="classes_and_epochs"
+EXPERIMENT_GROUP="classes_and_epochs2"
 
 # List of optimizers as an array
 OPTIMIZERS=("SGD")
