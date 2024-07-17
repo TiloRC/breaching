@@ -9,7 +9,7 @@ BATCH_SIZE=8        # Single batch size
 #IMAGE_COUNT=8       # Number of images must match epoch count
 REPETITIONS=10      # Default value 1
 CLASSES_PER_BATCH=(1)
-EPOCH_COUNTS=(1 4 8)  # List of epoch counts
+EPOCH_COUNTS=(1 2 4 8)  # List of epoch counts
 
 # Experiment group name
 EXPERIMENT_GROUP="classes_and_epochs"
