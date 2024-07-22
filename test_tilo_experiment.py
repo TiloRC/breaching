@@ -4,9 +4,34 @@ import math
 import numpy
 import pandas as pd
 from breaching import get_config
+from breaching import get_config
 from breaching.cases import construct_dataloader, construct_case
 import torch
 from collections import Counter
+
+# disable breakpoints
+import pdb
+def noop():
+    pass
+pdb.set_trace = noop
+
+
+# set up config
+def make_config():
+    cfg = get_config(overrides=["case=4_fedavg_small_scale", "case/data=CIFAR10"])
+    cfg.case.data.partition = "random"
+    cfg.case.user.user_idx = 1
+    cfg.case.model = "linear"
+    cfg.case.user.provide_labels = True
+    cfg.case.user.num_data_points = 1
+    cfg.case.user.num_local_updates = 1
+    cfg.case.user.num_data_per_local_update_step =1
+    cfg.attack.regularization.total_variation.scale = 1e-3
+    cfg.case.user.optimizer = 'SGD'
+    cfg.attack.optim.callback = 1000
+    cfg.attack.optim.max_iterations = 1
+    cfg.case.data.classes_per_batch = 1
+    return cfg
 
 def test_cuda():
     import platform
@@ -22,15 +47,14 @@ def test_dependencies():
 def test_run_experiments():
     numpy.array([1, 2])
     print(numpy.__version__)
-    max_iter = 12
-    callback_iter = 3
-    res = run_experiments(0, max_iter, optimizer="SGD", callback_interval=callback_iter, seed=47, num_data_points=2,
-                         num_local_updates=1,
-                         num_data_per_local_update_step=2,
-                          model = "linear")
+
+    cfg = make_config()
+    cfg.attack.optim.max_iterations = 12
+    cfg.attack.optim.callback = 3
+    res = run_experiments(cfg, 0)
 
     assert isinstance(res, pd.DataFrame), "Result should be a pandas DataFrame"
-    assert len(res) == math.ceil(max_iter / callback_iter) + 1
+    assert len(res) == math.ceil(cfg.attack.optim.max_iterations / cfg.attack.optim.callback) + 1
     expected_columns = ['mse', 'psnr', 'lpips', 'rpsnr', 'ssim', 'max_ssim', 'max_rpsnr', 'order', 'IIP-pixel', 'feat_mse', 'parameters', 'label_acc', 'loss', 'time']
 
 
@@ -40,9 +64,10 @@ def test_run_experiments():
 
 
 def test_optimizers():
+    cfg = make_config()
     # make sure optimizers don't crash
-    max_iter = 2
-    callback_iter = 1
+    cfg.attack.optim.max_iterations = 2
+    cfg.attack.optim.callback = 1
 
     def run_optim_experiment(optim, model="linear"):
         if optim == "KFAC":
@@ -50,9 +75,10 @@ def test_optimizers():
                 import kfac
             except ImportError:
                 return
-        run_experiments(0, max_iter, optimizer=optim, callback_interval=callback_iter, seed=47, num_data_points=2,
-                        num_local_updates=1, num_data_per_local_update_step=2,
-                          model = model)
+        cfg.case.model = model
+        cfg.case.user.optimizer = optim
+
+        run_experiments(cfg, 0)
 
     run_optim_experiment("SGD")
     run_optim_experiment("KFAC")

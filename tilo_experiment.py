@@ -8,27 +8,10 @@ import argparse
 import os
 
 
-def configure_experiment(cfg, num_data_points, num_local_updates, num_data_per_local_update_step, optimizer,
-                         optim_callback, max_iterations, model, classes_per_batch):
-    cfg.case.data.partition = "random"
-    cfg.case.user.user_idx = 1
-    cfg.case.model = model
-    cfg.case.user.provide_labels = True
-    cfg.case.user.num_data_points = num_data_points
-    cfg.case.user.num_local_updates = num_local_updates
-    cfg.case.user.num_data_per_local_update_step = num_data_per_local_update_step
-    cfg.attack.regularization.total_variation.scale = 1e-3
-    cfg.case.user.optimizer = optimizer
-    cfg.attack.optim.callback = optim_callback
-    cfg.attack.optim.max_iterations = max_iterations
-    cfg.case.data.classes_per_batch = classes_per_batch
-    return cfg
 
 
-def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
-                   seed=47, experiment_repetitions=1, callback_interval=100,
-                   num_data_points=1, num_local_updates=1, num_data_per_local_update_step=1, model='resnet18',
-                    classes_per_batch=None):
+def run_experiments(cfg, gpu_index, name=None,
+                   seed=47, experiment_repetitions=1):
     """
     Run a gradient inversion attack experiment to test the ability to reconstruct images
     given a particular optimizer and configuration.
@@ -76,7 +59,6 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    cfg = breaching.get_config(overrides=["case=4_fedavg_small_scale", "case/data=CIFAR10"])
     device = torch.device(f'cuda:{gpu_index}') if torch.cuda.is_available() else torch.device('cpu')
     if device == torch.device('cpu'):
         if name is None:
@@ -84,8 +66,6 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
         else:
             print(name + " using cpu")
     setup = dict(device=device, dtype=getattr(torch, cfg.case.impl.dtype))
-    cfg = configure_experiment(cfg, num_data_points, num_local_updates, num_data_per_local_update_step, optimizer,
-                               callback_interval, max_iterations, model, classes_per_batch)
 
     def run_experiment(id):
         # Construct components
@@ -154,43 +134,6 @@ def run_experiments(gpu_index, max_iterations, name=None, optimizer="SGD",
         all_results.to_csv(folder + name  +".csv")
     return all_results
 
-
-def summarize_dataframes(dataframes):
-    # Ensure there is at least one DataFrame
-    if len(dataframes) == 0:
-        raise ValueError("At least one DataFrame is required")
-
-    # Check all DataFrames have the same columns
-    columns = dataframes[0].columns
-    for df in dataframes:
-        if not all(columns == df.columns):
-            raise ValueError("All DataFrames must have the same columns")
-
-    # Ensure all columns are numeric
-    dataframes = [df.apply(pd.to_numeric, errors='coerce') for df in dataframes]
-
-    # Concatenate the DataFrames along the rows
-    combined_df = pd.concat(dataframes)
-
-    # Calculate summary statistics
-    avg_df = combined_df.groupby(combined_df.index).mean()
-    std_df = combined_df.groupby(combined_df.index).std()
-    q25_df = combined_df.groupby(combined_df.index).quantile(0.25)
-    q50_df = combined_df.groupby(combined_df.index).quantile(0.50)
-    q75_df = combined_df.groupby(combined_df.index).quantile(0.75)
-
-    # Rename the columns
-    avg_df.columns = [f'{col}_avg' for col in avg_df.columns]
-    std_df.columns = [f'{col}_std' for col in std_df.columns]
-    q25_df.columns = [f'{col}_25th' for col in q25_df.columns]
-    q50_df.columns = [f'{col}_50th' for col in q50_df.columns]
-    q75_df.columns = [f'{col}_75th' for col in q75_df.columns]
-
-    # Combine all statistics into one DataFrame
-    summary_df = pd.concat([avg_df, std_df, q25_df, q50_df, q75_df], axis=1)
-
-    return summary_df
-
 def make_folder(folder_name):
     # create folder to store experiment results
     try:
@@ -227,18 +170,27 @@ if __name__ == "__main__":
 
     num_local_updates = int((args.image_count / args.batch_size)*args.epoch_count)
 
+    # set up config
+    cfg = breaching.get_config(overrides=["case=4_fedavg_small_scale", "case/data=CIFAR10"])
+    cfg.case.data.partition = "random"
+    cfg.case.user.user_idx = 1
+    cfg.case.model = args.model
+    cfg.case.user.provide_labels = True
+    cfg.case.user.num_data_points = args.image_count
+    cfg.case.user.num_local_updates = num_local_updates
+    cfg.case.user.num_data_per_local_update_step = args.batch_size
+    cfg.attack.regularization.total_variation.scale = 1e-3
+    cfg.case.user.optimizer = args.optimizer
+    cfg.attack.optim.callback = args.callback_interval
+    cfg.attack.optim.max_iterations = args.max_iterations
+    cfg.case.data.classes_per_batch = args.classes_per_batch
 
-    result  = run_experiments(
-        name= args.experiment_name,
+
+    result = run_experiments(
+        cfg=cfg,
+        name=args.experiment_name,
         gpu_index=args.gpu_index,
-        max_iterations=args.max_iterations,
-        optimizer=args.optimizer,
-        model=args.model,
         experiment_repetitions=args.repetitions,
-        callback_interval=args.callback_interval,
-        num_data_points=args.image_count, num_local_updates=num_local_updates,
-        num_data_per_local_update_step=args.batch_size,
-        classes_per_batch = args.classes_per_batch
     )
 
     result["algorithm"] = args.optimizer
