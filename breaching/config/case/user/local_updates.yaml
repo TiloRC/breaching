@@ -21,3 +21,6 @@ num_local_updates: 4
 num_data_per_local_update_step: 1 # Every step is taken on a different sample
 local_learning_rate: 0.001
 provide_local_hyperparams: True # Provide local_learning_rate, num_data_per_local_update_step, num_local_updates to server
+
+# Tilo variable
+run_attacks_during_training: False

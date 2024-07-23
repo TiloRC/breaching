@@ -2,12 +2,23 @@ import numpy as np
 import pandas as pd
 import logging, sys
 import torch
+import torch.nn.functional as F
 import breaching
 import sys
 import argparse
 import os
 
 
+# Function to calculate cosine similarity for two lists of tensors
+def cosine_similarity_lists(list1, list2):
+    # Concatenate all tensors in each list
+    concatenated_tensor1 = torch.cat([tensor.view(-1) for tensor in list1])
+    concatenated_tensor2 = torch.cat([tensor.view(-1) for tensor in list2])
+
+    # Calculate cosine similarity
+    similarity = F.cosine_similarity(concatenated_tensor1.unsqueeze(0), concatenated_tensor2.unsqueeze(0))
+
+    return similarity.item()
 
 
 def run_experiments(cfg, gpu_index, name=None,
@@ -73,32 +84,57 @@ def run_experiments(cfg, gpu_index, name=None,
         attacker = breaching.attacks.prepare_attack(server.model, server.loss, cfg.attack, setup)
         #breaching.utils.overview(server, user, attacker)
 
-        # Compute model update
-        server_payload = server.distribute_payload()
-        shared_data, true_user_data = user.compute_local_updates(server_payload)
-        user.plot(true_user_data)
-
 
         # Reconstruct data
         results = []
-        def calculate_metrics_callback(candidate, iteration, trial, labels, loss, time):
-            # save metrics data
-            reconstructed_data = dict(data=candidate, labels=None)
-            metrics = breaching.analysis.report(reconstructed_data, true_user_data, [server_payload],
-                                                server.model, order_batch=True, compute_full_iip=False,
-                                                cfg_case=cfg.case, setup=setup, verbose=False)
-            metrics['iteration'] = iteration + 1
-            metrics['loss'] = loss
-            metrics['time'] = time
-            results.append(metrics)
+        def create_callback(training_metrics):
+            training_accuracy = training_metrics.iloc[-1]['accuracy']
+            training_loss = training_metrics.iloc[-1]['loss']
+            training_step =  training_metrics.iloc[-1]['step']
+            def calculate_metrics_callback(candidate, iteration, trial, labels, loss, time):
+                # save metrics data
+                reconstructed_data = dict(data=candidate, labels=None)
+                metrics = breaching.analysis.report(reconstructed_data, true_user_data, [server_payload],
+                                                    server.model, order_batch=True, compute_full_iip=False,
+                                                    cfg_case=cfg.case, setup=setup, verbose=False)
+                metrics['iteration'] = iteration + 1
+                metrics['loss'] = loss
+                metrics['time'] = time
+                metrics['training accuracy'] = training_accuracy
+                metrics['training loss'] = training_loss
+                metrics['training step'] = training_step
+                results.append(metrics)
 
-            if name is not None:
-                user.plot(reconstructed_data)
-                plt.savefig(name +"/inprogress_" + id + "/"+ name + "_" + id + "_iter"+str(iteration+1) + "_reconstruction.png")
+                if name is not None:
+                    user.plot(reconstructed_data)
+                    plt.savefig(name +"/inprogress_" + id + "/"+ name + "_" + id + "_iter"+str(iteration+1) + "_reconstruction.png")
 
-        reconstructed_user_data, stats = attacker.reconstruct([server_payload], [shared_data], {}, dryrun=cfg.dryrun, callback=calculate_metrics_callback)
+            return calculate_metrics_callback
 
-        return user, true_user_data, reconstructed_user_data, pd.DataFrame(results), shared_data
+        first_reconstruction = None
+        counter = 0
+        server_payload = server.distribute_payload()
+        for shared_data, true_user_data, training_metrics in user.compute_local_updates(server_payload):
+            callback = create_callback(training_metrics)
+            print(f"starting attack number: {counter+1}")
+            reconstructed_user_data, stats = attacker.reconstruct([server_payload], [shared_data], {}, dryrun=cfg.dryrun, callback=callback)
+            if counter == 0:
+                first_reconstruction = reconstructed_user_data.copy()
+            counter += 1
+
+        if first_reconstruction is None:
+            raise Exception("first_reconstruction is None")
+        if counter > 1:
+            breakpoint()
+            sim = cosine_similarity_lists(first_reconstruction['data'], reconstructed_user_data['data'])
+        else:
+            sim = 1
+
+        df_results = pd.DataFrame(results)
+        df_results['first_last_update_sim'] = sim
+        df_results['num updates'] = counter
+
+        return user, true_user_data, reconstructed_user_data, df_results, shared_data
 
     if name is not None:
         folder = name + "/"
@@ -160,6 +196,7 @@ if __name__ == "__main__":
                         default=1)
     parser.add_argument('--classes_per_batch', type=int, help='',
                         default=1)
+    parser.add_argument('--run_attacks_during_training', type=bool, default=False)
     args = parser.parse_args()
 
     if args.batch_size > args.image_count:
@@ -184,6 +221,7 @@ if __name__ == "__main__":
     cfg.attack.optim.callback = args.callback_interval
     cfg.attack.optim.max_iterations = args.max_iterations
     cfg.case.data.classes_per_batch = args.classes_per_batch
+    cfg.case.user.run_attacks_during_training = args.run_attacks_during_training
 
 
     result = run_experiments(

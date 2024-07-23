@@ -4,6 +4,8 @@ import torch
 import copy
 from itertools import chain
 
+import pandas as pd
+
 from .data import construct_dataloader
 import logging
 
@@ -34,6 +36,8 @@ class UserSingleStep(torch.nn.Module):
     def __init__(self, model, loss, dataloader, setup, idx, cfg_user):
         """Initialize from cfg_user dict which contains atleast all keys in the matching .yaml :>"""
         super().__init__()
+        self.run_attacks_during_training = cfg_user.run_attacks_during_training
+
         self.num_data_points = cfg_user.num_data_points
 
         self.provide_labels = cfg_user.provide_labels
@@ -339,6 +343,14 @@ class UserMultiStep(UserSingleStep):
         self.counted_queries += 1
         user_data = self._load_data()
 
+        training_metrics_df = pd.DataFrame(columns=['Step', 'Loss', 'Accuracy'])
+        training_metrics = []
+
+        def calculate_accuracy(outputs, labels):
+            # Calculate accuracy
+            predictions = outputs.argmax(dim=1)
+            return (predictions == labels).float().mean().item()
+
         # Compute local updates
         parameters = server_payload["parameters"]
         buffers = server_payload["buffers"]
@@ -389,12 +401,15 @@ class UserMultiStep(UserSingleStep):
         else:
             raise ValueError(f"Unknown optimizer: {self.optimizer}")
 
+        seen_data_count = 0
+        steps_taken = 0
         seen_data_idx = 0
         label_list = []
         for step in range(self.num_local_updates):
             data = {
                 k: v[seen_data_idx : seen_data_idx + self.num_data_per_local_update_step] for k, v in user_data.items()
             }
+            seen_data_count += self.num_data_per_local_update_step
             seen_data_idx += self.num_data_per_local_update_step
             seen_data_idx = seen_data_idx % self.num_data_points
             label_list.append(data["labels"].sort()[0])
@@ -409,6 +424,11 @@ class UserMultiStep(UserSingleStep):
             outputs = self.model(**data)
             loss = self.loss(outputs, data["labels"])
             loss.backward()
+
+            # Log metrics at each step
+            training_metrics.append((
+                step, loss.item(), calculate_accuracy(outputs, data["labels"])
+            ))
 
             grads_ref = [p.grad for p in self.model.parameters()]
             if self.clip_value > 0:
@@ -428,10 +448,29 @@ class UserMultiStep(UserSingleStep):
                 optimizer.step(closure)
             else:
                 optimizer.step()
+            steps_taken = step + 1
+
+            if self.run_attacks_during_training:
+                yield self._finalize_update(data, user_data, parameters, buffers, training_metrics, label_list,
+                                            steps_taken)
+
+        if not self.run_attacks_during_training:
+            yield self._finalize_update(data, user_data, parameters, buffers, training_metrics, label_list, steps_taken)
+
+    def _finalize_update(self, data, user_data, parameters, buffers, training_metrics, label_list, steps_taken):
+        def calculate_accuracy(outputs, labels):
+            predictions = outputs.argmax(dim=1)
+            return (predictions == labels).float().mean().item()
+
+        # Log final metrics after training
+        final_outputs = self.model(**data)
+        final_loss = self.loss(final_outputs, data["labels"])
+        training_metrics.append((
+            "final", final_loss.item(), calculate_accuracy(final_outputs, data["labels"])
+        ))
+        training_metrics_df = pd.DataFrame(training_metrics, columns=['step', 'loss', 'accuracy'])
 
         # Share differential to server version:
-        # This is equivalent to sending the new stuff and letting the server do it, but in line
-        # with the gradients sent in UserSingleStep
         shared_grads = [
             (p_local - p_server.to(**self.setup)).clone().detach()
             for (p_local, p_server) in zip(self.model.parameters(), parameters)
@@ -443,7 +482,7 @@ class UserMultiStep(UserSingleStep):
             labels=user_data["labels"] if self.provide_labels else None,
             local_hyperparams=dict(
                 lr=self.local_learning_rate,
-                steps=self.num_local_updates,
+                steps=steps_taken,
                 data_per_step=self.num_data_per_local_update_step,
                 labels=label_list,
             )
@@ -456,7 +495,7 @@ class UserMultiStep(UserSingleStep):
         )
         true_user_data = dict(data=user_data[self.data_key], labels=user_data["labels"], buffers=shared_buffers)
 
-        return shared_data, true_user_data
+        return shared_data, true_user_data, training_metrics_df
 
 
 class ChainedDataloader:
