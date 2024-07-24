@@ -124,11 +124,13 @@ def run_experiments(cfg, gpu_index, name=None,
 
         if first_reconstruction is None:
             raise Exception("first_reconstruction is None")
-        if counter > 1:
-            breakpoint()
-            sim = cosine_similarity_lists(first_reconstruction['data'], reconstructed_user_data['data'])
-        else:
-            sim = 1
+        # if counter > 1:
+        #     breakpoint()
+        #     sim = cosine_similarity_lists(first_reconstruction['data'], reconstructed_user_data['data'])
+        # else:
+        #     sim = 1
+        #
+        sim = None
 
         df_results = pd.DataFrame(results)
         df_results['first_last_update_sim'] = sim
