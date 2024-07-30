@@ -449,6 +449,7 @@ class UserMultiStep(UserSingleStep):
             else:
                 optimizer.step()
             steps_taken = step + 1
+            final_step = steps_taken == self.num_local_updates
 
             if self.run_attacks_during_training:
                 yield self._finalize_update(data, user_data, parameters, buffers, training_metrics, label_list,
@@ -466,7 +467,7 @@ class UserMultiStep(UserSingleStep):
         final_outputs = self.model(**data)
         final_loss = self.loss(final_outputs, data["labels"])
         training_metrics.append((
-            "final", final_loss.item(), calculate_accuracy(final_outputs, data["labels"])
+            steps_taken, final_loss.item(), calculate_accuracy(final_outputs, data["labels"])
         ))
         training_metrics_df = pd.DataFrame(training_metrics, columns=['step', 'loss', 'accuracy'])
 
