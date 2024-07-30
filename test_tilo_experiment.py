@@ -105,6 +105,25 @@ def test_batch_heterogeneity():
         shared_data, true_user_data, metrics = update[0]
         return true_user_data
 
+    # test experiments without batch hetergeneity work normally
+    cfg = make_config()
+    cfg.case.data.classes_per_batch = None
+    cfg.case.data.batch_size = 8
+    cfg.case.user.num_data_points = 8
+
+    res = run_experiments(cfg, 0)
+    assert isinstance(res, pd.DataFrame)
+
+    labels1 = get_data(cfg)['labels'].tolist()
+    labels2 = get_data(cfg)['labels'].tolist()
+    labels3 = get_data(cfg)['labels'].tolist()
+    count1 = len(set(labels1))
+    count2 = len(set(labels2))
+    count3 = len(set(labels3))
+    # this will sometimes fail even if everything is working correctly
+    assert (count1 != count2) or (count2 != count3)
+
+
     # batch_size == 4
     cfg = get_config(overrides=["case=4_fedavg_small_scale", "case/data=CIFAR10"])
     cfg.case.data.classes_per_batch = 2
